@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>称量记录 - 实验室称量系统</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>⚖️ 实验室天平采集系统</h1>
+    <nav>
+      <a href="/">实时采集</a>
+      <a href="/static/records.html" class="active">称量记录</a>
+    </nav>
+    <div class="header-status" id="header-status"></div>
+  </header>
+
+  <main>
+    <section class="card col-12">
+      <h2>已存称量查询（SQLite 持久化，断线/重启后记录保留）</h2>
+      <div class="toolbar">
+        <div>
+          <label for="filter-sample">按样品筛选</label>
+          <select id="filter-sample">
+            <option value="">全部样品</option>
+          </select>
+        </div>
+        <div>
+          <label for="filter-limit">返回条数（1-500）</label>
+          <input id="filter-limit" type="number" min="1" max="500" value="100" />
+        </div>
+        <button class="primary" id="btn-query">查询 / 刷新</button>
+        <button id="btn-auto">自动刷新：关</button>
+      </div>
+    </section>
+
+    <section class="card col-12">
+      <h2 id="result-title">称量记录</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>样品编号</th>
+            <th>样品名称</th>
+            <th>重量 (g)</th>
+            <th>稳定标志</th>
+            <th>记录时间</th>
+          </tr>
+        </thead>
+        <tbody id="records-body">
+          <tr><td colspan="6" class="empty">点击“查询 / 刷新”加载记录</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/static/common.js"></script>
+  <script src="/static/records.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+services:
+  # 本地天平模拟器：9000 端口发换行 JSON，9001 端口接收浏览器经后端代理的控制
+  simulator:
+    build: .
+    image: lab-balance:latest
+    command: ["python", "-m", "simulator"]
+    environment:
+      SIM_TCP_HOST: "0.0.0.0"
+      SIM_TCP_PORT: "9000"
+      SIM_HTTP_HOST: "0.0.0.0"
+      SIM_HTTP_PORT: "9001"
+    ports:
+      - "9000:9000"   # 可选：方便用外部 TCP 工具直连观察报文
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:9001/state', timeout=3).status==200 else 1)"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+    restart: unless-stopped
+
+  # FastAPI 采集服务：网页 + REST API + SQLite + 单一 TCP 采集任务
+  web:
+    build: .
+    image: lab-balance:latest
+    depends_on:
+      simulator:
+        condition: service_healthy
+    environment:
+      BALANCE_HOST: "simulator"
+      BALANCE_PORT: "9000"
+      SIMULATOR_CONTROL_URL: "http://simulator:9001"
+      DB_PATH: "/data/weighings.db"
+      ZERO_EPSILON: "0.0005"
+    ports:
+      - "8000:8000"
+    volumes:
+      - balance-data:/data
+    restart: unless-stopped
+
+volumes:
+  balance-data:
