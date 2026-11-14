@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>称量记录 - 实验室称量系统</title>
+  <title>称量记录 / 归档 - 实验室称量系统</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
@@ -11,14 +11,14 @@
     <h1>⚖️ 实验室天平采集系统</h1>
     <nav>
       <a href="/">实时采集</a>
-      <a href="/static/records.html" class="active">称量记录</a>
+      <a href="/static/records.html" class="active">称量记录 / 归档</a>
     </nav>
     <div class="header-status" id="header-status"></div>
   </header>
 
   <main>
     <section class="card col-12">
-      <h2>已存称量查询（SQLite 持久化，断线/重启后记录保留）</h2>
+      <h2>已存称量查询（在线 + 归档合并查询，SQLite 持久化，断线/重启后记录保留）</h2>
       <div class="toolbar">
         <div>
           <label for="filter-sample">按样品筛选</label>
@@ -36,6 +36,40 @@
     </section>
 
     <section class="card col-12">
+      <h2>归档管理（把旧称量按原 ID 搬入独立 SQLite 档案，在线表减负，历史仍可查）</h2>
+      <div class="kv" style="grid-template-columns: 150px 1fr; margin-bottom: 8px">
+        <span class="k">在线记录数</span><span class="v" id="arch-online-count">—</span>
+        <span class="k">已归档条数</span><span class="v" id="arch-archived-count">—</span>
+        <span class="k">当前最大在线 ID</span><span class="v" id="arch-max-id">—</span>
+        <span class="k">归档目录</span><span class="v mono" id="arch-dir">—</span>
+      </div>
+      <div class="toolbar">
+        <div>
+          <label for="archive-cutoff">截止记录 ID（≤ 该 ID 的在线称量将被归档）</label>
+          <input id="archive-cutoff" type="number" min="1" placeholder="例如最大在线 ID" />
+        </div>
+        <button class="primary" id="btn-archive">执行归档</button>
+        <button id="btn-archive-refresh">刷新归档状态</button>
+        <button class="warn" id="btn-archive-fail">故障演示：下次登记强制失败</button>
+      </div>
+      <div id="archive-lastrun" class="archive-lastrun empty">尚未执行过归档</div>
+      <table>
+        <thead>
+          <tr>
+            <th>档案文件</th>
+            <th>ID 范围</th>
+            <th>条数</th>
+            <th>状态</th>
+            <th>归档时间</th>
+          </tr>
+        </thead>
+        <tbody id="archive-body">
+          <tr><td colspan="5" class="empty">暂无归档批次</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card col-12">
       <h2 id="result-title">称量记录</h2>
       <table>
         <thead>
@@ -45,11 +79,12 @@
             <th>样品名称</th>
             <th>重量 (g)</th>
             <th>稳定标志</th>
+            <th>来源</th>
             <th>记录时间</th>
           </tr>
         </thead>
         <tbody id="records-body">
-          <tr><td colspan="6" class="empty">点击“查询 / 刷新”加载记录</td></tr>
+          <tr><td colspan="7" class="empty">点击“查询 / 刷新”加载记录</td></tr>
         </tbody>
       </table>
     </section>

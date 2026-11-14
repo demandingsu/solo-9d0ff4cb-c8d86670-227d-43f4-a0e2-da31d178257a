@@ -76,7 +76,7 @@ async def harness(tmp_path):
     await tcp_server.start()
     await ctrl.start()
 
-    db = Database(str(tmp_path / "e2e.db"))
+    db = Database(str(tmp_path / "e2e.db"), archive_dir=str(tmp_path / "archives"))
     await db.init()
     sm = WeighingStateMachine()
     service = BalanceService(sm, db)

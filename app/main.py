@@ -60,6 +60,10 @@ class FailInjectionBody(BaseModel):
     count: int = Field(ge=0, le=100)
 
 
+class ArchiveBody(BaseModel):
+    cutoff_id: int = Field(ge=1)
+
+
 # ---------------------------------------------------------------------- #
 # 状态与样品
 # ---------------------------------------------------------------------- #
@@ -88,14 +92,44 @@ async def select_sample(body: SampleSelectBody) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------- #
-# 已存称量查询
+# 已存称量查询（在线 + 已登记归档合并，单次查询不漏不重）
 # ---------------------------------------------------------------------- #
 @app.get("/api/weighings")
 async def get_weighings(limit: int = 100, sample_code: str | None = None) -> dict[str, Any]:
     if sample_code is not None and not await db.sample_exists(sample_code):
         raise HTTPException(status_code=404, detail=f"样品 {sample_code} 不存在")
-    rows = await db.list_weighings(limit=limit, sample_code=sample_code)
-    return {"count": len(rows), "items": rows}
+    rows, warnings = await db.query_weighings(limit=limit, sample_code=sample_code)
+    return {"count": len(rows), "items": rows, "warnings": warnings}
+
+
+# ---------------------------------------------------------------------- #
+# 归档：把 id <= cutoff 的在线称量写入独立 SQLite 档案并移出在线表
+# ---------------------------------------------------------------------- #
+@app.post("/api/archives")
+async def create_archive(body: ArchiveBody) -> dict[str, Any]:
+    try:
+        result = await db.archive_weighings(body.cutoff_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        sm.add_event("error", f"归档失败（在线行保留，未发布半成品）：{exc}")
+        raise HTTPException(status_code=500, detail=f"归档失败：{exc}") from exc
+    if result["status"] == "archived":
+        rng = result["range"]
+        sm.add_event(
+            "info",
+            f"归档完成：ID {rng['min_id']}–{rng['max_id']} 共 {result['row_count']} 条"
+            f" → {result['file_name']}；在线剩余 {result['online_remaining']} 条，"
+            "采集与历史查询照常",
+        )
+    else:
+        sm.add_event("info", result["message"])
+    return result
+
+
+@app.get("/api/archives")
+async def get_archives() -> dict[str, Any]:
+    return await db.archive_status()
 
 
 # ---------------------------------------------------------------------- #
@@ -105,6 +139,13 @@ async def get_weighings(limit: int = 100, sample_code: str | None = None) -> dic
 async def fail_next_writes(body: FailInjectionBody) -> dict[str, Any]:
     db.set_fail_next_writes(body.count)
     return {"ok": True, "fail_remaining": db.fail_remaining()}
+
+
+@app.post("/api/dev/fail-next-archive-register")
+async def fail_next_archive_register(body: FailInjectionBody) -> dict[str, Any]:
+    """故障注入：让接下来 n 次归档“登记”失败（演示在线行保留、不发布半成品）。"""
+    db.set_fail_next_archive_register(body.count)
+    return {"ok": True, "fail_remaining": db.fail_archive_register_remaining()}
 
 
 # ---------------------------------------------------------------------- #

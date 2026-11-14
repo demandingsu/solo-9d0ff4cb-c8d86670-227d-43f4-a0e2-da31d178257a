@@ -30,6 +30,7 @@ services:
       BALANCE_PORT: "9000"
       SIMULATOR_CONTROL_URL: "http://simulator:9001"
       DB_PATH: "/data/weighings.db"
+      ARCHIVE_DIR: "/data/archives"
       ZERO_EPSILON: "0.0005"
     ports:
       - "8000:8000"

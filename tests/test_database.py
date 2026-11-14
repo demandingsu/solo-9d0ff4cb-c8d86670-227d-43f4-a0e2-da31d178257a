@@ -8,7 +8,7 @@ from app.database import Database
 
 @pytest.mark.asyncio
 async def test_seed_samples_and_weighing_crud(tmp_path):
-    db = Database(str(tmp_path / "t.db"))
+    db = Database(str(tmp_path / "t.db"), archive_dir=str(tmp_path / "archives"))
     await db.init()
     samples = await db.list_samples()
     codes = {s["code"] for s in samples}
@@ -32,7 +32,7 @@ async def test_seed_samples_and_weighing_crud(tmp_path):
 
 @pytest.mark.asyncio
 async def test_fail_injection_then_retry_succeeds(tmp_path):
-    db = Database(str(tmp_path / "f.db"))
+    db = Database(str(tmp_path / "f.db"), archive_dir=str(tmp_path / "archives"))
     await db.init()
     db.set_fail_next_writes(2)
     with pytest.raises(RuntimeError):

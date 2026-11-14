@@ -19,6 +19,12 @@ SIMULATOR_CONTROL_URL = _env("SIMULATOR_CONTROL_URL", "http://simulator:9001")
 # SQLite 数据库
 DB_PATH = _env("DB_PATH", "/data/weighings.db")
 
+# 归档 SQLite 文件目录（默认放在数据库同级的 archives/ 下，随持久卷一起保留）
+ARCHIVE_DIR = _env(
+    "ARCHIVE_DIR",
+    os.path.join(os.path.dirname(DB_PATH) or ".", "archives"),
+)
+
 # 判零阈值：|weight| <= ZERO_EPSILON 视为零位
 ZERO_EPSILON = float(_env("ZERO_EPSILON", "0.0005"))
 

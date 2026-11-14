@@ -216,3 +216,15 @@ tr:hover td { background: rgba(56, 189, 248, .05); }
 }
 .hidden { display: none !important; }
 .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* 归档管理 */
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+.archive-lastrun {
+  margin: 12px 0;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
